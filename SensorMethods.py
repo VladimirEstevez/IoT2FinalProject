@@ -5,12 +5,12 @@ def getLight():
 	res = ADC0832.getADC(0)
 	vol = 3.3/255 * res
 	if vol >= 1.65:
-		return(vol)
+		return(True)
 	else:
-		return(vol)
+		return(False)
 
 def ds18b20Read():
-	tfile = open("/sys/bus/w1/devices/28-3c01b5568e86/w1_slave")
+	tfile = open("/sys/bus/w1/devices/28-3c01b5561f90/w1_slave")
 	text = tfile.read()
 	tfile.close()
 	secondline = text.split("\n")[1]
@@ -22,6 +22,6 @@ def ds18b20Read():
 
 def humididtyRead():
 	res = ADC0832.getADC(1)
-	moisture = 255 - res
-	print (("analog value: %03d  moisture: %d") %(res, moisture))
+	print(res)
+	moisture = round(((255-res)/255)*100, 2)
 	return moisture
