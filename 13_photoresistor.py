@@ -10,6 +10,7 @@ from AWSIoTPythonSDK.MQTTLib import AWSIoTMQTTClient
 import json
 import time
 import ds18b20
+import SensorMethods
 
 
 
@@ -26,13 +27,7 @@ light_to_send = 1
 temperature='temperature'
 humidity='light'
 
-def TM1638_init():
-	GPIO.setwarnings(False)
-	GPIO.setmode(GPIO.BOARD)
-	GPIO.setup(DIO, GPIO.OUT)
-	GPIO.setup(CLK, GPIO.OUT)
-	GPIO.setup(STB, GPIO.OUT)
-	#sendCommand(0x8f)
+
 
 def init():
     ADC0832.setup()
@@ -65,49 +60,26 @@ def loop():
     light_on = False  
     while True:
         
-        res1 = ADC0832.getADC(0)
-        print(res1)
+        #res1 = ADC0832.getADC(0)
+        #print(res1)
+        moisture = SensorMethods.humididtyRead()
+        print("MOISTURE",moisture)
+        #moisture = 255 - res1
+        #print('analog value: {:03d}  moisture: {}'.format(res1, moisture))
         
-        moisture = 255 - res1
-        print('analog value: {:03d}  moisture: {}'.format(res1, moisture))
+        tmp = SensorMethods.ds18b20Read()
+        temp_to_send = tmp
+        print("TEMPERATURE",tmp)
         
-        tmp = ds18b20.ds18b20Read()
-        print(tmp)
-        
-        
-        
-        
-        # Vr = 3.3 * res1 / 255
-        # print("int :  ",Vr)
-        
-        # Vr2 = 3.3 * float(res1) / 255
-        # print("float : ", Vr2, "\n")
-        # if Vr2 >0:
-            
-        #     Rt = (10000 * 3.3 /  Vr2) - 10000
-        #     print(Rt)
-        #     #Rt = 10000 * Vr / (3.3 - Vr)
-        #     #print ('Rt : %.2f' %Rt)
-        #     if Rt > 0:  # Add this line
-        #         temp = 1/(((math.log(Rt / 10000)) / 3455) + (1 / (273.15+25)))
-        #        # print ('Temp : %.2f' %temp)
-        #         Cel = temp - 273.15
-        #         temp_to_send = '{:.2f}'.format(Cel) 
-        #         Fah = Cel * 1.8 + 32
-        #         print ('Celsius: %.2f C  Fahrenheit: %.2f F' % (Cel, Fah))
-                
-                    
-        #     else:  # Add this line
-        #         print('Rt is zero or negative')
-                     
-        res2 = ADC0832.getADC(1)
-        vol = 3.3/255 * res2
-        light_to_send = vol
+        #res2 = ADC0832.getADC(1)
+        #vol = 3.3/255 * res2
+        light_to_send = SensorMethods.getLight()
+        print("light", light_to_send)
         
        # print ('analog value: %03d  || LIGHT SPECTRUM voltage: %.2fV' %(res2, vol))
          
         obj_to_send = {
-                "val0": "loaded",
+                "val0": moisture,
     "val1": temp_to_send,
     "val2": light_to_send,
     "val3": 0
