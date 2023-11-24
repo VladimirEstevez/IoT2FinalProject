@@ -5,12 +5,12 @@ def getLight():
 	res = ADC0832.getADC(0)
 	vol = 3.3/255 * res
 	if vol >= 1.65:
-		return("Light")
+		return(vol)
 	else:
-		return("Dark")
+		return(vol)
 
 def ds18b20Read():
-	tfile = open("/sys/bus/w1/devices/28-3c01b5561f90/w1_slave")
+	tfile = open("/sys/bus/w1/devices/28-3c01b5568e86/w1_slave")
 	text = tfile.read()
 	tfile.close()
 	secondline = text.split("\n")[1]
