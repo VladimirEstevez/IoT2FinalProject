@@ -13,14 +13,20 @@ import SensorMethods
 
 LED_PIN = 23
 T_THRESHOLD = 30 
+led_pin = 24
+fan_pin = 25
+water_pump = 4
+
+GPIO.setmode(GPIO.BCM)
+GPIO.setup(led_pin, GPIO.OUT)
 
 dweetIO = "https://dweet.io/dweet/for/" #common url for all users (post) 
 myThing = "vladimir_raspi2" #replace with you OWN thing name
 n = 15 #starting counter
+light_switch_status = False
 
 def init():
     ADC0832.setup()
-    GPIO.setmode(GPIO.BCM)
     GPIO.setup(LED_PIN, GPIO.OUT)
     GPIO.output(LED_PIN, GPIO.LOW)
     
@@ -44,20 +50,24 @@ def send_data(message):
     
 def loop():
     tmp = 0.0
-    light_on = False  
     while True:
         
         tmp = SensorMethods.ds18b20Read()
         moisture = SensorMethods.humididtyRead()
-        light_to_send = SensorMethods.getLight()
+        light = SensorMethods.getLight()
         print("MOISTURE in %",moisture)
         print("TEMPERATURE",tmp)
-        print("light", light_to_send)
-                 
+        print("light", light)
+        
+        if light == False:
+            GPIO.output(led_pin, GPIO.HIGH)
+        else:
+            GPIO.output(led_pin, GPIO.LOW)
+        
         obj_to_send = {
                 "val0": moisture,
                 "val1": tmp,
-                "val2": light_to_send
+                "val2": light
             }
         
         send_data(obj_to_send)

@@ -4,7 +4,7 @@ import time
 import RPi.GPIO as GPIO
 
 GPIO.setmode(GPIO.BCM)
-gpio_pin = 4
+gpio_pin = 25
 GPIO.setup(gpio_pin, GPIO.OUT)
 
 def init():
@@ -19,7 +19,7 @@ def loop():
 		#print(temp)
 		#time.sleep(0.5)
 		GPIO.output(gpio_pin, GPIO.HIGH)
-		time.sleep(1)
+		time.sleep(8)
 		GPIO.output(gpio_pin, GPIO.LOW)
 		time.sleep(1)
 
