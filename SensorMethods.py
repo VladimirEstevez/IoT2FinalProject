@@ -10,6 +10,9 @@ def getLight():
 		return(False)
 
 def ds18b20Read():
+    # Vlads sensor number 28-3c01b5561f90
+    # Emile sensor number 28-3c01b5561f90
+
 	tfile = open("/sys/bus/w1/devices/28-3c01b5561f90/w1_slave")
 	text = tfile.read()
 	tfile.close()
