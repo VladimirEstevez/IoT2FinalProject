@@ -11,9 +11,32 @@ import json
 import time
 import ds18b20
 import SensorMethods
+import threading
 
+def turn_on_motor(duration, gpio_pin):
+    GPIO.output(gpio_pin, GPIO.HIGH)
+    time.sleep(duration)
+    GPIO.output(gpio_pin, GPIO.LOW)
 
+def get_temperature_threshold():
+    while True:
+        try:
+            temperature_threshold = float(input("Please enter the desired Temperature Threshold: "))
+            return temperature_threshold
+        except ValueError:
+            print("That's not a valid number. Please enter a number.")
+            
+def get_moisture_threshold():
+    while True:
+        try:
+            moisture_threshold = float(input("Please enter the desired Moisture Threshold: "))
+            return moisture_threshold
+        except ValueError:
+            print("That's not a valid number. Please enter a number.")
 
+temperature_threshold = get_temperature_threshold()
+
+moisture_threshold = get_moisture_threshold()
 
 
 LED_PIN = 23
@@ -26,7 +49,8 @@ temp_to_send = 25
 light_to_send = 1
 temperature='temperature'
 humidity='light'
-
+pump_gpio_pin = 4
+fan_gpio_pin = 25
 
 
 def init():
@@ -34,6 +58,9 @@ def init():
     GPIO.setmode(GPIO.BCM)
     GPIO.setup(LED_PIN, GPIO.OUT)
     GPIO.output(LED_PIN, GPIO.LOW)
+   
+    GPIO.setup(pump_gpio_pin, GPIO.OUT)
+    GPIO.setup(fan_gpio_pin, GPIO.OUT)
     
     
     
@@ -64,12 +91,24 @@ def loop():
         #print(res1)
         moisture = SensorMethods.humididtyRead()
         print("MOISTURE",moisture)
+        
+        if(moisture < moisture_threshold):
+            #turn the Pump on for 3 seconds
+            pump_thread = threading.Thread(target=turn_on_motor, args=(3,pump_gpio_pin))
+            pump_thread.start()
+            
+            
         #moisture = 255 - res1
         #print('analog value: {:03d}  moisture: {}'.format(res1, moisture))
         
         tmp = SensorMethods.ds18b20Read()
         temp_to_send = tmp
         print("TEMPERATURE",tmp)
+        
+        if(tmp > temperature_threshold):
+            #turn the fan motor for 30 seconds
+            fan_thread = threading.Thread(target=turn_on_motor, args=(30,fan_gpio_pin))
+            fan_thread.start()
         
         #res2 = ADC0832.getADC(1)
         #vol = 3.3/255 * res2
@@ -80,15 +119,13 @@ def loop():
          
         obj_to_send = {
                 "val0": moisture,
-    "val1": temp_to_send,
-    "val2": light_to_send,
-    "val3": 0
+                "val1": tmp,
+                "val2": light_to_send
             }
-        
         send_data(obj_to_send)
        
                 
-        time.sleep(1)
+        time.sleep(20)
 
 if __name__ == '__main__':
     init()
