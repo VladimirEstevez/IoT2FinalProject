@@ -107,9 +107,9 @@ def loop():
         if(tmp > temperature_threshold):
             send_email(
                 subject='Greenhouse Alert',
-                message=f'Temperature: {tmp}',
+                message=f'Temperature is over threshold({temperature_threshold}): current temperature in C: {tmp}',
                 from_addr='providejahwill@gmail.com',
-                to_addrs=['providejahwill@gmail.com'],
+                to_addrs=['gaastudillo@crcmail.net'],
                 smtp_server='smtp.gmail.com',
                 smtp_port=587,
                 username='providejahwill@gmail.com',
@@ -123,6 +123,16 @@ def loop():
             #turn the Pump on for 3 seconds
             pump_thread = threading.Thread(target=turn_on_motor, args=(3,pump_gpio_pin))
             pump_thread.start()
+            send_email(
+                subject='Greenhouse Alert',
+                message=f'Moisture is over threshold({moisture_threshold}): current moisture %: {moisture}',
+                from_addr='providejahwill@gmail.com',
+                to_addrs=['providejahwill@gmail.com'],
+                smtp_server='smtp.gmail.com',
+                smtp_port=587,
+                username='providejahwill@gmail.com',
+                password='wjnn vsla ekmi xwlz'
+            )
         
         if light == False:
             GPIO.output(led_pin, GPIO.HIGH)
