@@ -45,22 +45,21 @@ T_THRESHOLD = 30
 dweetIO = "https://dweet.io/dweet/for/" #common url for all users (post) 
 myThing = "vladimir_raspi2" #replace with you OWN thing name
 n = 15 #starting counter
-temp_to_send = 25
-light_to_send = 1
-temperature='temperature'
-humidity='light'
 pump_gpio_pin = 4
 fan_gpio_pin = 25
 
+GPIO.setmode(GPIO.BCM)
 
 def init():
     ADC0832.setup()
-    GPIO.setmode(GPIO.BCM)
+
     GPIO.setup(LED_PIN, GPIO.OUT)
     GPIO.output(LED_PIN, GPIO.LOW)
    
     GPIO.setup(pump_gpio_pin, GPIO.OUT)
     GPIO.setup(fan_gpio_pin, GPIO.OUT)
+    GPIO.output(pump_gpio_pin, GPIO.LOW)
+    GPIO.output(fan_gpio_pin, GPIO.LOW)
     
     
     
@@ -102,13 +101,13 @@ def loop():
         #print('analog value: {:03d}  moisture: {}'.format(res1, moisture))
         
         tmp = SensorMethods.ds18b20Read()
-        temp_to_send = tmp
         print("TEMPERATURE",tmp)
         
         if(tmp > temperature_threshold):
             #turn the fan motor for 30 seconds
             fan_thread = threading.Thread(target=turn_on_motor, args=(30,fan_gpio_pin))
             fan_thread.start()
+            
         
         #res2 = ADC0832.getADC(1)
         #vol = 3.3/255 * res2

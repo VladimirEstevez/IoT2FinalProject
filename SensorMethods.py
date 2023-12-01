@@ -21,6 +21,7 @@ def ds18b20Read():
 	temperature = float(temperaturedata[2:])
 	temperature = temperature / 1000
 	temperature = round(temperature, 2)
+	print("tempSensor", temperature)
 	return temperature
 
 def humididtyRead():

@@ -10,12 +10,13 @@ from AWSIoTPythonSDK.MQTTLib import AWSIoTMQTTClient
 import json
 import time
 import SensorMethods
+import threading
 
 LED_PIN = 23
 T_THRESHOLD = 30 
 led_pin = 24
-fan_pin = 25
-water_pump = 4
+fan_gpio_pin = 25
+pump_gpio_pin = 4
 
 GPIO.setmode(GPIO.BCM)
 GPIO.setup(led_pin, GPIO.OUT)
@@ -25,10 +26,39 @@ myThing = "vladimir_raspi2" #replace with you OWN thing name
 n = 15 #starting counter
 light_switch_status = False
 
+def turn_on_motor(duration, gpio_pin):
+    GPIO.output(gpio_pin, GPIO.HIGH)
+    time.sleep(duration)
+    GPIO.output(gpio_pin, GPIO.LOW)
+
+def get_temperature_threshold():
+    while True:
+        try:
+            temperature_threshold = float(input("Please enter the desired Temperature Threshold: "))
+            return temperature_threshold
+        except ValueError:
+            print("That's not a valid number. Please enter a number.")
+            
+def get_moisture_threshold():
+    while True:
+        try:
+            moisture_threshold = float(input("Please enter the desired Moisture Threshold: "))
+            return moisture_threshold
+        except ValueError:
+            print("That's not a valid number. Please enter a number.")
+
+temperature_threshold = get_temperature_threshold()
+moisture_threshold = get_moisture_threshold()
+
 def init():
     ADC0832.setup()
     GPIO.setup(LED_PIN, GPIO.OUT)
     GPIO.output(LED_PIN, GPIO.LOW)
+    
+    GPIO.setup(pump_gpio_pin, GPIO.OUT)
+    GPIO.setup(fan_gpio_pin, GPIO.OUT)
+    GPIO.output(pump_gpio_pin, GPIO.LOW)
+    GPIO.output(fan_gpio_pin, GPIO.LOW)
     
     
     
@@ -58,6 +88,16 @@ def loop():
         print("MOISTURE in %",moisture)
         print("TEMPERATURE",tmp)
         print("light", light)
+        
+        if(tmp > temperature_threshold):
+            #turn the fan motor for 30 seconds
+            fan_thread = threading.Thread(target=turn_on_motor, args=(30,fan_gpio_pin))
+            fan_thread.start()
+            
+        if(moisture < moisture_threshold):
+            #turn the Pump on for 3 seconds
+            pump_thread = threading.Thread(target=turn_on_motor, args=(3,pump_gpio_pin))
+            pump_thread.start()
         
         if light == False:
             GPIO.output(led_pin, GPIO.HIGH)
@@ -101,3 +141,6 @@ if __name__ == '__main__':
         mqttc.disconnect()
         ADC0832.destroy()
         print ('The end !')
+
+
+
