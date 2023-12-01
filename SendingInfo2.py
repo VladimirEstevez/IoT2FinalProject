@@ -113,7 +113,7 @@ def loop():
                 smtp_server='smtp.gmail.com',
                 smtp_port=587,
                 username='providejahwill@gmail.com',
-                password='Winter2023'
+                password='wjnn vsla ekmi xwlz'
             )
             #turn the fan motor for 30 seconds
             fan_thread = threading.Thread(target=turn_on_motor, args=(30,fan_gpio_pin))
