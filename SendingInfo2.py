@@ -104,7 +104,7 @@ def get_temperature_threshold():
 def get_moisture_threshold():
     while True:
         try:
-            moisture_threshold = float(input("Please enter the desired Moisture Threshold: "))
+            moisture_threshold = float(input("Please enter the desired Moisture Threshold in %: "))
             return moisture_threshold
         except ValueError:
             print("That's not a valid number. Please enter a number.")
@@ -213,7 +213,7 @@ def loop():
             }
         
         send_data(obj_to_send)
-        time.sleep(20)
+        time.sleep(2)
 
 if __name__ == '__main__':
     init()
