@@ -1,4 +1,6 @@
 #!/usr/bin/env python
+import tkinter as tk
+from tkinter import ttk
 import ADC0832
 import time
 import math
@@ -14,8 +16,6 @@ import threading
 import smtplib
 from email.mime.text import MIMEText
 
-LED_PIN = 23
-T_THRESHOLD = 30 
 led_pin = 24
 fan_gpio_pin = 25
 pump_gpio_pin = 4
@@ -28,18 +28,65 @@ myThing = "vladimir_raspi2" #replace with you OWN thing name
 n = 15 #starting counter
 light_switch_status = False
 
-def send_email(subject, message, from_addr, to_addrs, smtp_server, smtp_port, username, password):
+class GreenhouseApp:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("Greenhouse Control")
+        
+        self.led_status = False
+        self.temperature_threshold_var = tk.DoubleVar(value=temperature_threshold)
+        self.moisture_threshold_var = tk.DoubleVar(value=moisture_threshold)
+
+        # Create LED control button
+        self.led_button = tk.Button(root, text="Toggle LED", command=self.toggle_led)
+        self.led_button.pack(pady=20)
+        
+        self.fan_button = tk.Button(root, text="Toggle Fan", command=self.toggle_fan)
+        self.fan_button.pack(pady=10)
+
+        # Create Pump control button
+        self.pump_button = tk.Button(root, text="Toggle Pump", command=self.toggle_pump)
+        self.pump_button.pack(pady=10)
+
+
+    def toggle_led(self):
+        # Toggle LED status
+        self.led_status = not self.led_status
+
+        # Control the actual LED based on the status
+        GPIO.output(led_pin, GPIO.HIGH if self.led_status else GPIO.LOW)
+        
+    def toggle_fan(self):
+        # Toggle Fan status
+        fan_status = GPIO.input(fan_gpio_pin)
+        GPIO.output(fan_gpio_pin, GPIO.LOW if fan_status else GPIO.HIGH)
+
+    def toggle_pump(self):
+        # Toggle Pump status
+        pump_status = GPIO.input(pump_gpio_pin)
+        GPIO.output(pump_gpio_pin, GPIO.LOW if pump_status else GPIO.HIGH)
+        
+        
+def create_gui():
+    root = tk.Tk()
+    root.geometry("200x250")
+    app = GreenhouseApp(root)
+    root.mainloop()
+
+
+def send_email(subject, message, sender_email, recipient_emails, smtp_server, smtp_port, username, password):
     msg = MIMEText(message)
     msg['Subject'] = subject
-    msg['From'] = from_addr
-    msg['To'] = ', '.join(to_addrs)
+    msg['From'] = sender_email
+    msg['To'] = ', '.join(recipient_emails)
 
     server = smtplib.SMTP(smtp_server, smtp_port)
     server.ehlo()
     server.starttls()
     server.login(username, password)
-    server.sendmail(from_addr, to_addrs, msg.as_string())
+    server.sendmail(sender_email, recipient_emails, msg.as_string())
     server.quit()
+
 
 def turn_on_motor(duration, gpio_pin):
     GPIO.output(gpio_pin, GPIO.HIGH)
@@ -61,19 +108,34 @@ def get_moisture_threshold():
             return moisture_threshold
         except ValueError:
             print("That's not a valid number. Please enter a number.")
+            
+def get_user_input():
+    sender_email = input("Enter your email address (sender): ")
+    
+    recipients = input("Enter recipient email(s), separated by commas: ")
+    recipient_emails = [email.strip() for email in recipients.split(',')]
+
+    google_app_password = input("Enter your Google App password: ")
+
+    return sender_email, recipient_emails, google_app_password
 
 temperature_threshold = get_temperature_threshold()
 moisture_threshold = get_moisture_threshold()
-
+sender_email, recipient_emails, google_app_password = get_user_input()
+    
 def init():
     ADC0832.setup()
-    GPIO.setup(LED_PIN, GPIO.OUT)
-    GPIO.output(LED_PIN, GPIO.LOW)
+    GPIO.setup(led_pin, GPIO.OUT)
+    GPIO.output(led_pin, GPIO.LOW)
+    
     
     GPIO.setup(pump_gpio_pin, GPIO.OUT)
     GPIO.setup(fan_gpio_pin, GPIO.OUT)
     GPIO.output(pump_gpio_pin, GPIO.LOW)
     GPIO.output(fan_gpio_pin, GPIO.LOW)
+    
+    gui_thread = threading.Thread(target=create_gui)
+    gui_thread.start()
     
     
     
@@ -105,16 +167,19 @@ def loop():
         print("light", light)
         
         if(tmp > temperature_threshold):
-            send_email(
-                subject='Greenhouse Alert',
-                message=f'Temperature is over threshold({temperature_threshold}): current temperature in C: {tmp}',
-                from_addr='providejahwill@gmail.com',
-                to_addrs=['gaastudillo@crcmail.net'],
-                smtp_server='smtp.gmail.com',
-                smtp_port=587,
-                username='providejahwill@gmail.com',
-                password='wjnn vsla ekmi xwlz'
-            )
+            try:
+                send_email(
+                    subject='Greenhouse Alert',
+                    message=f'Temperature is over threshold({temperature_threshold}): current temperature in C: {tmp}',
+                    sender_email=sender_email,
+                    recipient_emails=recipient_emails,
+                    smtp_server='smtp.gmail.com',
+                    smtp_port=587,
+                    username=sender_email,
+                    password=google_app_password
+                )
+            except:
+                print ("Email configuration not accepted")
             #turn the fan motor for 30 seconds
             fan_thread = threading.Thread(target=turn_on_motor, args=(30,fan_gpio_pin))
             fan_thread.start()
@@ -123,17 +188,19 @@ def loop():
             #turn the Pump on for 3 seconds
             pump_thread = threading.Thread(target=turn_on_motor, args=(3,pump_gpio_pin))
             pump_thread.start()
-            send_email(
-                subject='Greenhouse Alert',
-                message=f'Moisture is over threshold({moisture_threshold}): current moisture %: {moisture}',
-                from_addr='providejahwill@gmail.com',
-                to_addrs=['providejahwill@gmail.com'],
-                smtp_server='smtp.gmail.com',
-                smtp_port=587,
-                username='providejahwill@gmail.com',
-                password='wjnn vsla ekmi xwlz'
-            )
-        
+            try:
+                send_email(
+                    subject='Greenhouse Alert',
+                    message=f'Moisture is below threshold({moisture_threshold}): current moisture %: {moisture}',
+                    sender_email=sender_email,
+                    recipient_emails=recipient_emails,
+                    smtp_server='smtp.gmail.com',
+                    smtp_port=587,
+                    username=sender_email,
+                    password=google_app_password
+                )
+            except:
+                print ("\nEmail configuration not accepted")
         if light == False:
             GPIO.output(led_pin, GPIO.HIGH)
         else:
@@ -167,9 +234,6 @@ if __name__ == '__main__':
         # Subscribe to the topic
         subscription_topic = "down/test"
         mqttc.subscribe(subscription_topic, 1, callback)
-
-       
-        
         
         loop()
     except KeyboardInterrupt: 

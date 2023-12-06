@@ -12,8 +12,6 @@ import time
 import SensorMethods
 import threading
 
-LED_PIN = 23
-T_THRESHOLD = 30 
 led_pin = 24
 fan_gpio_pin = 25
 pump_gpio_pin = 4
